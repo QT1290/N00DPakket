@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Noodpakket</title>
+  <meta name="description" content="Houd de houdbaarheid van je noodpakket bij.">
+  <meta name="theme-color" content="#1f3a2e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Noodpakket">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="8" width="26" height="20" rx="3"/><path d="M11 8V5h10v3"/><path d="M16 13v10M11 18h10"/></svg>
+        <div>
+          <h1>Noodpakket</h1>
+          <p class="sub">Voorraad &amp; houdbaarheid</p>
+        </div>
+      </div>
+      <button class="icon-btn" id="btn-instellingen" aria-label="Instellingen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="status" id="status" aria-live="polite"></section>
+
+    <section class="install-hint" id="install-hint" hidden>
+      <p><strong>Tip:</strong> zet deze app op je beginscherm (Delen → <em>Zet op beginscherm</em>). Dan bewaart je telefoon je lijst ook als je de app een tijd niet opent.</p>
+      <button class="link-btn" id="btn-hint-weg">Begrepen</button>
+    </section>
+
+    <div class="toolbar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="zoek" placeholder="Zoek in je voorraad" autocomplete="off">
+      </label>
+      <div class="chips" id="chips" role="tablist" aria-label="Filter op categorie"></div>
+    </div>
+
+    <section id="lijst" class="lijst"></section>
+
+    <section class="leeg" id="leeg" hidden>
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="38" rx="5"/><path d="M22 18v-6h20v6"/><path d="M32 28v18M23 37h18"/></svg>
+      <h2>Je noodpakket is nog leeg</h2>
+      <p>Voeg je eerste item toe, of zet een back-up terug via de instellingen.</p>
+      <div class="leeg-acties">
+        <button class="btn primary" data-actie="nieuw">Item toevoegen</button>
+        <button class="btn" data-actie="importeer">Back-up terugzetten</button>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab" id="btn-nieuw" aria-label="Item toevoegen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    <span>Toevoegen</span>
+  </button>
+
+  <!-- Item toevoegen / bewerken -->
+  <dialog id="dlg-item" class="sheet">
+    <form id="form-item" method="dialog">
+      <header class="sheet-head">
+        <h2 id="item-titel">Item toevoegen</h2>
+        <button type="button" class="icon-btn" data-sluit aria-label="Sluiten"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="sheet-body">
+        <label class="veld">
+          <span>Naam</span>
+          <input name="naam" required maxlength="80" placeholder="Bijv. Kidneybonen" list="naam-suggesties" autocomplete="off">
+          <datalist id="naam-suggesties"></datalist>
+        </label>
+        <label class="veld">
+          <span>Categorie</span>
+          <select name="categorie"></select>
+        </label>
+        <div class="rij">
+          <div class="veld">
+            <span>Aantal</span>
+            <div class="stepper">
+              <button type="button" data-stap="-1" aria-label="Minder">−</button>
+              <input name="aantal" type="number" min="0" max="9999" inputmode="numeric" value="1">
+              <button type="button" data-stap="1" aria-label="Meer">+</button>
+            </div>
+          </div>
+          <label class="veld">
+            <span>Inhoud <small>(optioneel)</small></span>
+            <input name="inhoud" maxlength="20" placeholder="Bijv. 200g">
+          </label>
+        </div>
+        <label class="veld">
+          <span>Houdbaar tot</span>
+          <input name="houdbaar" type="date">
+          <small class="help">Laat leeg voor spullen zonder houdbaarheidsdatum.</small>
+        </label>
+        <label class="veld">
+          <span>Notitie <small>(optioneel)</small></span>
+          <input name="notitie" maxlength="140" placeholder="Bijv. onderste plank">
+        </label>
+        <label class="check">
+          <input type="checkbox" name="teKopen">
+          <span>Nog kopen (staat op je boodschappenlijst)</span>
+        </label>
+      </div>
+      <footer class="sheet-foot">
+        <button type="button" class="btn danger ghost" id="btn-verwijder" hidden>Verwijderen</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-sluit>Annuleren</button>
+        <button type="submit" class="btn primary">Opslaan</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Vervangen -->
+  <dialog id="dlg-vervang" class="sheet small">
+    <form id="form-vervang" method="dialog">
+      <header class="sheet-head">
+        <h2>Vervangen</h2>
+        <button type="button" class="icon-btn" data-sluit aria-label="Sluiten"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="sheet-body">
+        <p id="vervang-tekst" class="muted"></p>
+        <label class="veld">
+          <span>Nieuwe houdbaarheidsdatum</span>
+          <input name="houdbaar" type="date" required>
+        </label>
+      </div>
+      <footer class="sheet-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-sluit>Annuleren</button>
+        <button type="submit" class="btn primary">Opslaan</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Instellingen -->
+  <dialog id="dlg-instellingen" class="sheet">
+    <div class="sheet-inner">
+      <header class="sheet-head">
+        <h2>Instellingen</h2>
+        <button type="button" class="icon-btn" data-sluit aria-label="Sluiten"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="sheet-body">
+        <section class="blok">
+          <h3>Waarschuwen</h3>
+          <label class="veld">
+            <span>Waarschuw me dit aantal dagen voor de datum</span>
+            <input type="number" id="set-dagen" min="1" max="365" inputmode="numeric">
+          </label>
+        </section>
+
+        <section class="blok">
+          <h3>Back-up</h3>
+          <p class="muted">Je lijst staat alleen op dit apparaat. Maak af en toe een back-up, bijvoorbeeld naar iCloud Drive of Google Drive.</p>
+          <div class="knoppen">
+            <button class="btn" id="btn-export">Back-up downloaden</button>
+            <button class="btn" id="btn-import">Back-up terugzetten</button>
+            <input type="file" id="import-bestand" accept=".json,application/json" hidden>
+          </div>
+        </section>
+
+        <section class="blok">
+          <h3>E-mailherinneringen</h3>
+          <p class="muted">Optioneel. De app bewaart een <strong>versleutelde</strong> kopie van je lijst in je GitHub-repository. Eén keer per week kijkt GitHub of er iets bijna verloopt en stuurt je dan een e-mail, zonder namen van items. Zonder jouw wachtwoord kan niemand de kopie lezen. Zie de README voor de stappen.</p>
+          <label class="check">
+            <input type="checkbox" id="sync-aan">
+            <span>E-mailherinneringen aan</span>
+          </label>
+          <div id="sync-velden" class="sync-velden">
+            <label class="veld">
+              <span>Repository</span>
+              <input id="sync-repo" placeholder="gebruikersnaam/N00Dpakket" autocomplete="off" spellcheck="false">
+            </label>
+            <label class="veld">
+              <span>GitHub-token</span>
+              <input id="sync-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+            </label>
+            <label class="veld">
+              <span>Wachtwoord voor versleuteling</span>
+              <input id="sync-wachtwoord" type="password" autocomplete="new-password">
+              <small class="help">Gebruik precies hetzelfde wachtwoord als het secret <code>NOODPAKKET_WACHTWOORD</code> in GitHub.</small>
+            </label>
+            <div class="knoppen">
+              <button class="btn primary" id="btn-sync">Opslaan en nu versturen</button>
+            </div>
+            <p class="sync-status muted" id="sync-status"></p>
+          </div>
+        </section>
+
+        <section class="blok">
+          <h3>Gevarenzone</h3>
+          <button class="btn danger ghost" id="btn-wis">Alles van dit apparaat wissen</button>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
