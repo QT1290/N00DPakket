@@ -1,0 +1,52 @@
+name: Noodpakket-herinnering
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # elke maandagochtend
+  push:
+    branches: [main]
+    paths: ["data/voorraad.enc.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: noodpakket-herinnering
+  cancel-in-progress: false
+
+jobs:
+  controleer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Controleer houdbaarheid
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOODPAKKET_WACHTWOORD: ${{ secrets.NOODPAKKET_WACHTWOORD }}
+          EIGENAAR: ${{ github.repository_owner }}
+          APP_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: node scripts/controleer.mjs
+
+      # GitHub zet geplande workflows uit na 60 dagen zonder commits.
+      # Daarom een klein "nog in leven"-bestand als er 45 dagen niets is gebeurd.
+      - name: Houd de wekelijkse controle actief
+        if: github.event_name == 'schedule'
+        run: |
+          laatste=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - laatste )) -gt $(( 45 * 86400 )) ]; then
+            date -u +%Y-%m-%d > data/laatste-controle.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+            git add data/laatste-controle.txt
+            git commit -m "Wekelijkse controle actief houden"
+            git push
+          fi
