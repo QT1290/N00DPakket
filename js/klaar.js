@@ -1,7 +1,7 @@
 // Checklists per pakket en de score "hoe klaar ben je".
 // Puur rekenwerk: geen DOM, zodat het los te testen is.
 
-import { status } from "./datum.js";
+import { status } from "./datum.js?v=3";
 
 export const KITS = [
   { id: "thuis", naam: "Thuis", kort: "Thuis" },

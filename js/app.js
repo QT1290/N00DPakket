@@ -1,7 +1,7 @@
-import { dagenTot, status, STANDAARD_DAGEN } from "./datum.js";
-import { versleutel } from "./kluis.js";
-import { KITS, NIVEAUS, CATEGORIEEN, checklist, score, volgendeStappen, plekVan } from "./klaar.js";
-import { BLADEN, ICONEN, KOELKAST_UUR, VRIEZER_UUR } from "./gids.js";
+import { dagenTot, status, STANDAARD_DAGEN } from "./datum.js?v=3";
+import { versleutel } from "./kluis.js?v=3";
+import { KITS, NIVEAUS, CATEGORIEEN, checklist, score, volgendeStappen, plekVan } from "./klaar.js?v=3";
+import { BLADEN, ICONEN, KOELKAST_UUR, VRIEZER_UUR } from "./gids.js?v=3";
 
 /* ---------- Opslag (alleen op dit apparaat) ---------- */
 
@@ -351,9 +351,9 @@ formVervang.addEventListener("submit", (e) => {
 
 /* ---------- Lijst-interactie ---------- */
 
-$("#lijst").addEventListener("click", (e) => {
+function itemKlik(e) {
   const knop = e.target.closest("[data-actie]");
-  const kaart = e.target.closest(".item");
+  const kaart = e.target.closest(".item[data-id]");
   if (!kaart) return;
   const it = staat.items.find((i) => i.id === kaart.dataset.id);
   if (!it) return;
@@ -372,7 +372,8 @@ $("#lijst").addEventListener("click", (e) => {
     case "bewerk": openItem(it); break;
     case "gekocht": openItem(it, { gekocht: true, leegDatum: true, titel: "Gekocht: datum invullen" }); break;
   }
-});
+}
+$("#lijst").addEventListener("click", itemKlik);
 
 $("#status").addEventListener("click", (e) => {
   const b = e.target.closest("[data-status]");
@@ -609,128 +610,113 @@ function regelsVoor(kit = ui.kit, niveau = ui.niveau) {
   return checklist({ kit, niveau, items: staat.items, huis: huis(), afgevinkt: staat.afgevinkt, plan: staat.plan, waarschuwDagen: dagen() });
 }
 
-const V = { klaar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>' };
+const V = {
+  klaar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  terug: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+};
 
-function ring(pct) {
-  const r = 26, omtrek = 2 * Math.PI * r;
-  return `<svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
-    <circle cx="32" cy="32" r="${r}" class="ring-bg"/>
-    <circle cx="32" cy="32" r="${r}" class="ring-fg" stroke-dasharray="${omtrek}" stroke-dashoffset="${omtrek * (1 - pct / 100)}"/>
-  </svg><span class="ring-n">${pct}%</span>`;
-}
+// Kleur van een percentage, zoals de tellers in het statusbord.
+const pctKleur = (p) => (p >= 80 ? "ok" : p >= 50 ? "warn" : "bad");
 
 function renderKlaar() {
   const kit = ui.kit;
   const thuis = kit === "thuis";
-
-  // Niveaukaarten (alleen thuis)
-  $("#niveaus").hidden = !thuis;
-  if (thuis) {
-    $("#niveaus").innerHTML = NIVEAUS.map((n, i) => {
-      const p = score(regelsVoor("thuis", i));
-      return `<button role="tab" class="niveau" data-niveau="${i}" aria-selected="${ui.niveau === i}">
-        <span class="niveau-naam">${n.naam}</span>
-        <span class="niveau-pct">${p}%${p === 100 ? V.klaar : ""}</span>
-        <span class="balk"><span style="width:${p}%"></span></span>
-      </button>`;
-    }).join("");
-  }
-
   const regels = regelsVoor();
   const pct = score(regels);
-  const klaar = regels.filter((r) => r.klaar).length;
-  const essOpen = regels.filter((r) => r.ess && !r.klaar).length;
-  const titel = thuis ? NIVEAUS[ui.niveau].titel : kit === "tas" ? "Je vluchttas" : "Je noodkit voor de auto";
+  const open = regels.filter((r) => !r.klaar);
+  const essOpen = open.filter((r) => r.ess).length;
+  const wie = `${personen() === 1 ? "1 persoon" : `${personen()} personen`}${+huis().huisdieren ? ` + ${huis().huisdieren} ${huis().huisdieren == 1 ? "huisdier" : "huisdieren"}` : ""}`;
+  const voor = thuis ? NIVEAUS[ui.niveau].naam : kitNaam().toLowerCase();
 
-  $("#score").innerHTML = `
-    <div class="score-tekst">
-      <p class="overline">Hoe klaar ben je</p>
-      <h2>${esc(titel)}</h2>
-      <p><button class="link-btn inline" id="btn-huis">${esc(personen() === 1 ? "1 persoon" : `${personen()} personen`)}${+huis().huisdieren ? ` + ${huis().huisdieren} ${huis().huisdieren == 1 ? "dier" : "dieren"}` : ""}</button>
-         <span class="muted"> · ${klaar} van ${regels.length} onderdelen</span></p>
-      <p class="score-sub">${essOpen ? `${essOpen} ${essOpen === 1 ? "essentieel onderdeel ontbreekt" : "essentiële onderdelen ontbreken"} nog` : "Alle essentiële spullen zijn er"}</p>
-    </div>
-    <div class="score-ring" title="Essentiële spullen tellen dubbel mee">${ring(pct)}<span class="ring-l">score</span></div>`;
+  let msg;
+  if (!open.length) msg = `Je ${thuis ? `noodpakket voor ${voor}` : voor} is compleet. Goed bezig!`;
+  else if (essOpen) msg = `<strong>${essOpen}</strong> ${essOpen === 1 ? "essentieel onderdeel ontbreekt" : "essentiële onderdelen ontbreken"} nog ${thuis ? `voor ${voor}` : `in je ${voor}`}.`;
+  else msg = `Alle essentiële spullen zijn er. Nog <strong>${open.length}</strong> ${open.length === 1 ? "onderdeel" : "onderdelen"} te gaan.`;
+  msg += ` Berekend voor <button class="band-link" id="btn-huis">${esc(wie)}</button>.`;
 
-  // Volgende stappen
-  const stappen = volgendeStappen(regels);
-  const open = regels.length - klaar;
-  $("#stappen").hidden = !stappen.length;
-  $("#stappen").innerHTML = stappen.length ? `
-    <div class="kaart-kop"><h3>Volgende stappen</h3><span class="muted">${stappen.length} ${stappen.length === 1 ? "suggestie" : "suggesties"}</span></div>
-    <ol class="stappen">${stappen.map((r, i) => `
-      <li><button class="stap" data-regel="${r.id}">
-        <span class="stap-n">${i + 1}</span>
-        <span class="stap-t"><span>${esc(r.naam)}</span>${r.ess ? `<small>Essentieel, telt dubbel in de score</small>` : r.uitleg ? `<small>${esc(r.uitleg)}</small>` : ""}</span>
-        ${ICONEN.pijl}
-      </button></li>`).join("")}
-    </ol>
-    ${open > stappen.length ? `<button class="link-btn" id="btn-alle-open">Bekijk alle ${open} ontbrekende onderdelen</button>` : ""}` : "";
+  const stat = (kleur, n, l, extra = "") => `<button class="stat ${kleur}" ${extra}><span class="n">${n}</span><span class="l">${l}</span></button>`;
+  const grid = thuis
+    ? NIVEAUS.map((n, i) => {
+        const p = score(regelsVoor("thuis", i));
+        return stat(pctKleur(p), `${p}%`, n.naam, `data-niveau="${i}" aria-pressed="${ui.niveau === i}"`);
+      }).join("")
+    : stat(pctKleur(pct), `${pct}%`, "Score", 'tabindex="-1"') +
+      stat("ok", regels.length - open.length, "Klaar", 'data-open="0"') +
+      stat("warn", open.length, "Te gaan", `data-open="1" aria-pressed="${ui.alleenOpen}"`);
 
+  $("#klaar-status").innerHTML = `<p class="status-msg">${msg}</p><div class="status-grid">${grid}</div>`;
+
+  renderStappen(regels);
   renderBinnenkort();
   renderChecklist(regels);
+}
+
+function regelHtml(r) {
+  const s = r.klaar ? "ok" : r.ess ? "warn" : "none";
+  const t = r.klaar
+    ? { n: V.klaar, l: r.auto ? "in voorraad" : "afgevinkt" }
+    : r.voortgang !== null
+      ? { n: `${Math.round(r.voortgang * 100)}%`, l: "van genoeg" }
+      : { n: "—", l: r.ess ? "essentieel" : "nog niet" };
+  const meta = [
+    r.ess ? `<span>Essentieel · telt dubbel</span>` : "",
+    r.uitleg ? `<span>${esc(r.uitleg)}</span>` : "",
+    r.bron ? `<span class="${r.auto ? "bron-ok" : ""}">${esc(r.bron)}</span>` : "",
+  ].join("");
+  const acties = [];
+  if (!r.auto) acties.push(r.handmatig
+    ? `<button class="mini" data-vink="${r.id}">${V.terug} Toch niet</button>`
+    : `<button class="mini" data-vink="${r.id}">${V.klaar} Heb ik</button>`);
+  if (!r.klaar && r.nieuw) acties.push(`<button class="mini strong" data-regel="${r.id}">${V.plus} Aan voorraad toevoegen</button>`);
+  if (!r.klaar && !r.nieuw) acties.push(`<button class="mini strong" data-regel="${r.id}">Gezinsplan invullen</button>`);
+  return `
+    <article class="item regel s-${s}">
+      <h3 class="item-naam">${esc(r.naam)}</h3>
+      <div class="teller"><span class="n">${t.n}</span><span class="l">${t.l}</span></div>
+      <div class="item-meta">${meta}</div>
+      ${acties.length ? `<div class="item-acties">${acties.join("")}</div>` : ""}
+    </article>`;
+}
+
+const kop = (titel, extra = "") => `<div class="groep"><h2>${titel}</h2><span class="lijn"></span>${extra}</div>`;
+
+function renderStappen(regels) {
+  const stappen = volgendeStappen(regels);
+  $("#stappen").innerHTML = stappen.length ? kop("Volgende stappen") + stappen.map(regelHtml).join("") : "";
 }
 
 function renderBinnenkort() {
   const d = dagen();
   const met = kitItems().filter((i) => i.houdbaar && !i.teKopen).sort((a, b) => a.houdbaar.localeCompare(b.houdbaar));
-  const el = $("#binnenkort");
-  el.hidden = !met.length;
-  if (!met.length) return (el.innerHTML = "");
   const urgent = met.filter((i) => status(i, d) !== "ok");
-  const toon = urgent.length >= 3 ? urgent.slice(0, 5) : met.slice(0, Math.max(3, urgent.length));
-  const maand = new Intl.DateTimeFormat("nl-NL", { month: "long", year: "numeric" });
-  const regel = (i) => {
-    const s = status(i, d);
-    const [j, m] = i.houdbaar.split("-").map(Number);
-    const wanneer = maand.format(new Date(j, m - 1, 1));
-    const tekst = s === "bad" ? `Verlopen · ${wanneer} · vervang het` : s === "warn" ? `Verloopt binnenkort · ${mooieDatum(i.houdbaar)}` : `Goed tot ${wanneer}`;
-    const ic = s === "bad" ? ICONEN.let_op : s === "warn" ? ICONEN.klok : '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
-    return `<li><button class="komt s-${s}" data-id="${esc(i.id)}">${ic}<span><span>${esc(i.naam)}${i.aantal > 1 ? ` <span class="muted">${i.aantal}×</span>` : ""}</span><small>${tekst}</small></span>${ICONEN.pijl}</button></li>`;
-  };
+  const toon = urgent.length ? urgent.slice(0, 3) : met.slice(0, 2);
   const rest = met.length - toon.length;
-  el.innerHTML = `
-    <div class="kaart-kop"><h3>Binnenkort</h3></div>
-    <p class="muted kaart-sub">Vervang op tijd, dan gaat er niets verloren.</p>
-    <ul class="komt-lijst">${toon.map(regel).join("")}</ul>
-    ${rest > 0 ? `<button class="link-btn" data-naar="voorraad">+ nog ${rest} ${rest === 1 ? "datum" : "datums"} in je voorraad</button>` : ""}`;
+  $("#binnenkort").innerHTML = toon.length
+    ? kop("Binnenkort aan de beurt") + toon.map(itemHtml).join("") +
+      (rest > 0 ? `<button class="link-btn" data-naar="voorraad">Bekijk alle ${met.length} datums in je voorraad</button>` : "")
+    : "";
 }
 
 function renderChecklist(regels) {
-  const groepen = [...new Set(regels.map((r) => r.groep))];
   const open = regels.filter((r) => !r.klaar).length;
   let html = `
-    <div class="kaart-kop checklist-kop"><h3>Checklist</h3><span class="muted">${open ? `${open} te gaan` : "Compleet!"}</span></div>
-    <div class="chips" role="tablist">
-      <button class="chip" role="tab" data-open="0" aria-selected="${!ui.alleenOpen}">Alles</button>
-      <button class="chip" role="tab" data-open="1" aria-selected="${ui.alleenOpen}">Nog te doen</button>
+    <div class="chips" role="tablist" aria-label="Filter de checklist">
+      <button class="chip" role="tab" data-open="0" aria-selected="${!ui.alleenOpen}">Alles<span class="c">${regels.length}</span></button>
+      <button class="chip" role="tab" data-open="1" aria-selected="${ui.alleenOpen}">Nog te doen<span class="c">${open}</span></button>
     </div>`;
-  for (const g of groepen) {
+  let iets = false;
+  for (const g of [...new Set(regels.map((r) => r.groep))]) {
     const inGroep = regels.filter((r) => r.groep === g);
     const zichtbaar = ui.alleenOpen ? inGroep.filter((r) => !r.klaar) : inGroep;
+    if (!zichtbaar.length) continue;
+    iets = true;
     const p = score(inGroep);
-    const nogOpen = inGroep.filter((r) => !r.klaar).length;
-    html += `<section class="kaart cl-groep">
-      <div class="cl-kop"><div><h4>${esc(g)}</h4><small class="muted">${nogOpen ? `${nogOpen} ${nogOpen === 1 ? "onderdeel" : "onderdelen"} te gaan` : "Compleet"}</small></div>
-        <span class="cl-pct">${p === 100 ? V.klaar : `${p}%`}</span></div>
-      <span class="balk"><span style="width:${p}%"></span></span>
-      ${zichtbaar.length ? `<ul class="cl">${zichtbaar.map((r) => `
-        <li class="${r.klaar ? "klaar" : ""}">
-          <label class="cl-regel">
-            <input type="checkbox" data-vink="${r.id}" ${r.klaar ? "checked" : ""} ${r.auto ? "disabled" : ""}>
-            <span class="cl-t">
-              <span>${esc(r.naam)}${r.ess ? ' <span class="ess" title="Essentieel: telt dubbel">essentieel</span>' : ""}</span>
-              ${r.uitleg ? `<small>${esc(r.uitleg)}</small>` : ""}
-              ${r.voortgang !== null && !r.auto ? `<span class="balk dun"><span style="width:${Math.round(r.voortgang * 100)}%"></span></span>` : ""}
-              ${r.bron ? `<small class="${r.auto ? "bron-ok" : ""}">${esc(r.bron)}</small>` : ""}
-            </span>
-          </label>
-          ${!r.auto && r.nieuw ? `<button class="mini" data-regel="${r.id}" aria-label="Toevoegen aan voorraad">+ Voorraad</button>` : ""}
-        </li>`).join("")}</ul>` : ""}
-    </section>`;
+    html += kop(esc(g), `<span class="groep-pct ${pctKleur(p)}">${p}%</span>`) + zichtbaar.map(regelHtml).join("");
   }
-  html += `<p class="muted voetnoot">Een vinkje dat je niet kunt uitzetten betekent dat de app het in je voorraad heeft gevonden. Verlopen spullen tellen niet mee. Essentiële spullen tellen dubbel in de score.</p>`;
-  $("#checklist").innerHTML = html;
+  if (!iets) html += `<p class="geen-resultaat">Alles is afgevinkt. Goed bezig!</p>`;
+  html += `<p class="muted voetnoot">De app vinkt zelf af wat hij in je voorraad vindt. Verlopen spullen tellen niet mee, essentiële spullen tellen dubbel in de score.</p>`;
+  $("#checklist").innerHTML = kop("Checklist") + html;
 }
 
 function regelActie(id) {
@@ -744,28 +730,20 @@ $('[data-view="klaar"]').addEventListener("click", (e) => {
   const t = e.target;
   const niveau = t.closest("[data-niveau]");
   if (niveau) { ui.niveau = +niveau.dataset.niveau; bewaarUi(); return renderKlaar(); }
+  const vink = t.closest("[data-vink]");
+  if (vink) {
+    const sleutel = `${ui.kit}:${vink.dataset.vink}`;
+    if (staat.afgevinkt[sleutel]) delete staat.afgevinkt[sleutel];
+    else staat.afgevinkt[sleutel] = true;
+    return bewaar({ synchroniseer: false });
+  }
   const regel = t.closest("[data-regel]");
   if (regel) return regelActie(regel.dataset.regel);
-  const komt = t.closest(".komt");
-  if (komt) { const it = staat.items.find((i) => i.id === komt.dataset.id); if (it) openItem(it); return; }
   const o = t.closest("[data-open]");
-  if (o) { ui.alleenOpen = o.dataset.open === "1"; bewaarUi(); return renderKlaar(); }
-  if (t.closest("#btn-alle-open")) {
-    ui.alleenOpen = true; bewaarUi(); renderKlaar();
-    $("#checklist").scrollIntoView({ behavior: "smooth", block: "start" });
-    return;
-  }
+  if (o) { ui.alleenOpen = o.dataset.open === "1"; bewaarUi(); renderKlaar(); if (o.classList.contains("stat")) $("#checklist").scrollIntoView({ behavior: "smooth" }); return; }
   if (t.closest("#btn-huis")) return openHuis();
   if (t.closest('[data-naar="voorraad"]')) return toonTab("voorraad");
-});
-
-$("#checklist").addEventListener("change", (e) => {
-  const cb = e.target.closest("[data-vink]");
-  if (!cb) return;
-  const sleutel = `${ui.kit}:${cb.dataset.vink}`;
-  if (cb.checked) staat.afgevinkt[sleutel] = true;
-  else delete staat.afgevinkt[sleutel];
-  bewaar({ synchroniseer: false });
+  if (t.closest("#binnenkort")) return itemKlik(e);
 });
 
 /* ---------- Huishouden ---------- */
@@ -805,59 +783,81 @@ function bewaarStroom() {
   try { stroom ? localStorage.setItem(STROOM, JSON.stringify(stroom)) : localStorage.removeItem(STROOM); } catch {}
 }
 
-function aftelKaart(icoon, naam, uren, extra = "") {
-  const eind = stroom.start + uren * 3600000;
-  const over = eind - Date.now();
-  const verstreken = Math.min(1, Math.max(0, 1 - over / (uren * 3600000)));
-  const h = Math.floor(Math.max(0, over) / 3600000);
-  const m = Math.floor((Math.max(0, over) % 3600000) / 60000);
-  const voorbij = over <= 0;
-  return `<div class="aftel${voorbij ? " voorbij" : ""}">
-    <p class="aftel-kop">${icoon}<span>${naam}</span></p>
-    ${voorbij
-      ? `<p class="aftel-tijd klein">Langer dan ${uren} uur zonder stroom</p><p class="aftel-sub">Lees <button class="link-btn inline" data-blad="koelkast">Koelkast en vriezer</button> voor wat je weggooit.</p>`
-      : `<p class="aftel-tijd">${h}<small>u</small> ${String(m).padStart(2, "0")}<small>min</small></p><p class="aftel-sub">Veilig tot ${tot(eind)}</p>`}
-    <span class="balk"><span style="width:${Math.round(verstreken * 100)}%"></span></span>
-    ${extra}
-  </div>`;
+// Resterende tijd als "2:59" (uren:minuten), en een kleur zoals in het statusbord.
+function aftel(uren) {
+  const over = stroom.start + uren * 3600000 - Date.now();
+  const n = Math.max(0, over);
+  const tekst = `${Math.floor(n / 3600000)}:${String(Math.floor((n % 3600000) / 60000)).padStart(2, "0")}`;
+  return { tekst, eind: stroom.start + uren * 3600000, kleur: over <= 0 ? "bad" : over < 3600000 ? "warn" : "ok", voorbij: over <= 0 };
 }
 
 function renderTimer() {
-  const el = $("#timer");
+  const stat = (kleur, n, l) => `<div class="stat ${kleur}"><span class="n">${n}</span><span class="l">${l}</span></div>`;
+  const uurKnoppen = [1, 2, 3].map((u) => `<button class="mini" data-start="${u}">${ICONEN.klok} ${u} uur geleden</button>`).join("");
+
   if (!stroom) {
-    el.innerHTML = `
-      <p class="timer-kop">${ICONEN.klok}<strong>Koelkasttimer</strong></p>
-      <p class="muted">Start de timer als de stroom uitvalt. Je ziet dan hoe lang je koelkast (${KOELKAST_UUR} uur) en vriezer (${VRIEZER_UUR.half} tot ${VRIEZER_UUR.vol} uur) nog koud blijven. De timer loopt door als je de app sluit.</p>
-      <div class="knoppen">
-        <button class="btn primary" data-start="0">Stroom is nu uitgevallen</button>
-      </div>
-      <p class="muted klein-label">Al eerder uitgevallen?</p>
-      <div class="knoppen">${[1, 2, 3].map((u) => `<button class="mini" data-start="${u}">${ICONEN.klok} ${u} uur geleden</button>`).join("")}</div>`;
+    $("#stroom-status").innerHTML = `
+      <p class="status-msg">Valt de stroom uit? Start de timer, dan zie je hoe lang je eten nog koel blijft. Ook als je de app sluit.</p>
+      <div class="status-grid">
+        ${stat("none", `${KOELKAST_UUR}u`, "Koelkast")}
+        ${stat("none", `${VRIEZER_UUR.vol}u`, "Vriezer vol")}
+        ${stat("none", `${VRIEZER_UUR.half}u`, "Vriezer half")}
+      </div>`;
+    $("#timer").innerHTML = `
+      <h3 class="item-naam">Koelkasttimer</h3>
+      <div class="item-meta"><span>Start op het moment dat de stroom uitvalt.</span></div>
+      <div class="item-acties">
+        <button class="mini strong" data-start="0">${ICONEN.stekker} Stroom is nu uitgevallen</button>
+        ${uurKnoppen}
+      </div>`;
+    $("#timer").className = "item kaart-item s-warn";
     return;
   }
+
   const vol = stroom.vriezer !== "half";
-  el.innerHTML = `
-    <p class="timer-kop">${ICONEN.stekker}<span>Stroom uit sinds <strong>${tot(stroom.start)}</strong></span></p>
-    ${aftelKaart(ICONEN.koelkast, "Koelkast", KOELKAST_UUR)}
-    ${aftelKaart(ICONEN.vriezer, "Vriezer", vol ? VRIEZER_UUR.vol : VRIEZER_UUR.half, `
-      <p class="muted klein-label">Hoe vol is je vriezer?</p>
-      <div class="segment" role="radiogroup">
-        <button role="radio" data-vriezer="vol" aria-checked="${vol}">Vol · ${VRIEZER_UUR.vol} u</button>
-        <button role="radio" data-vriezer="half" aria-checked="${!vol}">Halfvol · ${VRIEZER_UUR.half} u</button>
-      </div>`)}
-    <p class="muted klein-label">Ging de stroom eerder uit?</p>
-    <div class="knoppen">${[1, 2, 3].map((u) => `<button class="mini" data-start="${u}">${ICONEN.klok} ${u} uur geleden</button>`).join("")}</div>
-    <p class="tip">${ICONEN.koelkast}<span>Houd de deuren dicht: elke keer openen laat de kou ontsnappen.</span></p>
-    <button class="btn stroom-terug" data-stop>Stroom is terug</button>`;
+  const k = aftel(KOELKAST_UUR);
+  const v = aftel(vol ? VRIEZER_UUR.vol : VRIEZER_UUR.half);
+  const uit = Date.now() - stroom.start;
+  const sinds = `${Math.floor(uit / 3600000)}:${String(Math.floor((uit % 3600000) / 60000)).padStart(2, "0")}`;
+
+  let msg;
+  if (k.voorbij && v.voorbij) msg = `De stroom is al te lang uit. Lees <strong>Koelkast en vriezer</strong> voor wat je weggooit.`;
+  else if (k.voorbij) msg = `Je koelkast is niet meer koud genoeg. De vriezer houdt het tot <strong>${tot(v.eind)}</strong>.`;
+  else msg = `Stroom uit sinds <strong>${tot(stroom.start)}</strong>. Koelkast veilig tot <strong>${tot(k.eind)}</strong>, vriezer tot <strong>${tot(v.eind)}</strong>.`;
+
+  $("#stroom-status").innerHTML = `
+    <p class="status-msg">${msg}</p>
+    <div class="status-grid">
+      ${stat(k.kleur, k.tekst, "Koelkast nog")}
+      ${stat(v.kleur, v.tekst, "Vriezer nog")}
+      ${stat("none", sinds, "Zonder stroom")}
+    </div>`;
+  $("#timer").className = `item kaart-item s-${k.voorbij ? "bad" : k.kleur === "warn" ? "warn" : "ok"}`;
+  $("#timer").innerHTML = `
+    <h3 class="item-naam">Koelkasttimer loopt</h3>
+    <div class="item-meta"><span>Houd de deuren dicht: elke keer openen laat de kou ontsnappen.</span></div>
+    <div class="item-acties">
+      <span class="muted klein">Vriezer:</span>
+      <button class="mini${vol ? " gekozen" : ""}" data-vriezer="vol" aria-pressed="${vol}">Vol · ${VRIEZER_UUR.vol}u</button>
+      <button class="mini${vol ? "" : " gekozen"}" data-vriezer="half" aria-pressed="${!vol}">Halfvol · ${VRIEZER_UUR.half}u</button>
+    </div>
+    <div class="item-acties">
+      <span class="muted klein">Eerder uit?</span>
+      ${uurKnoppen}
+    </div>
+    <div class="item-acties">
+      <button class="mini strong" data-stop>${ICONEN.stekker} Stroom is terug</button>
+      ${k.voorbij ? `<button class="mini" data-blad="koelkast">Wat gooi ik weg?</button>` : ""}
+    </div>`;
 }
 
 function renderBladen() {
   $("#bladen").innerHTML = BLADEN.map((b) => `
-    <button class="blad-knop" data-blad="${b.id}">
-      <span class="blad-ic">${ICONEN[b.icoon]}</span>
-      <span class="blad-t"><strong>${esc(b.titel)}</strong>${b.veilig ? `<span class="veilig">${ICONEN.let_op} Veiligheid</span>` : ""}<small>${esc(b.kort)}</small></span>
-      ${ICONEN.pijl}
-    </button>`).join("");
+    <article class="item blad-item s-${b.veilig ? "bad" : "gids"}" data-blad="${b.id}">
+      <h3 class="item-naam"><button class="naam-btn">${esc(b.titel)}</button></h3>
+      <div class="teller"><span class="n">${ICONEN[b.icoon]}</span><span class="l">${b.veilig ? "veiligheid" : "lezen"}</span></div>
+      <div class="item-meta"><span>${esc(b.kort)}</span></div>
+    </article>`).join("");
 }
 
 function openBlad(id) {
@@ -896,11 +896,33 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && ui
 const formPlan = $("#form-plan");
 function vulPlan() {
   for (const el of formPlan.elements) if (el.name) el.value = staat.plan[el.name] || "";
+  renderPlanStatus();
+}
+
+function renderPlanStatus() {
+  const velden = [...formPlan.elements].filter((el) => el.name);
+  const ingevuld = velden.filter((el) => (staat.plan[el.name] || "").trim()).length;
+  const plekken = ["plekDichtbij", "plekVerder"].filter((n) => (staat.plan[n] || "").trim()).length;
+  const nummers = (staat.plan.contacten || "").split("\n").filter((r) => r.trim()).length;
+  const msg = !ingevuld
+    ? "Schrijf één keer op waar jullie afspreken en wie wat doet. Het blijft alleen op dit apparaat."
+    : plekken < 2
+      ? `Goed begin. Spreek nog ${plekken ? "een tweede afspreekplek" : "twee afspreekplekken"} af: één dicht bij huis en één verder weg.`
+      : "Je plan staat. Print het en leg het bij je noodpakket.";
+  const stat = (kleur, n, l) => `<div class="stat ${kleur}"><span class="n">${n}</span><span class="l">${l}</span></div>`;
+  $("#plan-status").innerHTML = `
+    <p class="status-msg">${msg}</p>
+    <div class="status-grid">
+      ${stat(ingevuld === velden.length ? "ok" : ingevuld ? "warn" : "bad", `${ingevuld}/${velden.length}`, "Ingevuld")}
+      ${stat(plekken === 2 ? "ok" : plekken ? "warn" : "bad", `${plekken}/2`, "Afspreekplek")}
+      ${stat(nummers ? "ok" : "bad", nummers, nummers === 1 ? "Nummer" : "Nummers")}
+    </div>`;
 }
 let planTimer;
 formPlan.addEventListener("input", (e) => {
   if (!e.target.name) return;
   staat.plan[e.target.name] = e.target.value;
+  renderPlanStatus();
   clearTimeout(planTimer);
   planTimer = setTimeout(() => schrijf(OPSLAG, staat), 400);
 });
@@ -984,7 +1006,7 @@ if (!standalone && !lees(HINT, false) && /iphone|ipad|ipod/i.test(navigator.user
 $("#btn-hint-weg").addEventListener("click", () => { schrijf(HINT, true); $("#install-hint").hidden = true; });
 
 if ("serviceWorker" in navigator && location.protocol === "https:") {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 }
 
 // Vraag de browser om de opslag niet op te ruimen.

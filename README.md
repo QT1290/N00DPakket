@@ -61,3 +61,5 @@ Testen kan via **Actions → Noodpakket-herinnering → Run workflow**.
 | `scripts/controleer.mjs` | De wekelijkse controle |
 | `.github/workflows/herinnering.yml` | Wanneer de controle draait |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline werken en op het beginscherm zetten |
+
+> Bij een nieuwe versie: verhoog `VERSIE` in `sw.js` en de `?v=` in `index.html` en `js/*.js`, zodat telefoons nooit een oud script met een nieuwe pagina combineren.
