@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Noodpakket</title>
-  <meta name="description" content="Houd de houdbaarheid van je noodpakket bij.">
+  <meta name="description" content="Houd je noodpakket bij: houdbaarheid, checklist, stroomstoringsgids en gezinsplan.">
   <meta name="theme-color" content="#1f3a2e">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -33,33 +33,121 @@
   </header>
 
   <main class="wrap">
-    <section class="status" id="status" aria-live="polite"></section>
+    <!-- Voorraad -->
+    <section class="view" data-view="voorraad">
+      <div class="band">
+        <div class="kit-switch" role="tablist" aria-label="Kies een pakket"></div>
+        <div class="status" id="status" aria-live="polite"></div>
+      </div>
 
-    <section class="install-hint" id="install-hint" hidden>
-      <p><strong>Tip:</strong> zet deze app op je beginscherm (Delen → <em>Zet op beginscherm</em>). Dan bewaart je telefoon je lijst ook als je de app een tijd niet opent.</p>
-      <button class="link-btn" id="btn-hint-weg">Begrepen</button>
+      <section class="install-hint" id="install-hint" hidden>
+        <p><strong>Tip:</strong> zet deze app op je beginscherm (Delen → <em>Zet op beginscherm</em>). Dan bewaart je telefoon je lijst ook als je de app een tijd niet opent.</p>
+        <button class="link-btn" id="btn-hint-weg">Begrepen</button>
+      </section>
+
+      <div class="toolbar">
+        <label class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="search" id="zoek" placeholder="Zoek in je voorraad" autocomplete="off">
+        </label>
+        <div class="chips" id="chips" role="tablist" aria-label="Filter op categorie"></div>
+      </div>
+
+      <section id="lijst" class="lijst"></section>
+
+      <section class="leeg" id="leeg" hidden>
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="38" rx="5"/><path d="M22 18v-6h20v6"/><path d="M32 28v18M23 37h18"/></svg>
+        <h2 id="leeg-titel">Je noodpakket is nog leeg</h2>
+        <p id="leeg-tekst">Voeg je eerste item toe, of zet een back-up terug via de instellingen.</p>
+        <div class="leeg-acties">
+          <button class="btn primary" data-actie="nieuw">Item toevoegen</button>
+          <button class="btn" data-actie="importeer" id="leeg-import">Back-up terugzetten</button>
+        </div>
+      </section>
     </section>
 
-    <div class="toolbar">
-      <label class="search">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input type="search" id="zoek" placeholder="Zoek in je voorraad" autocomplete="off">
-      </label>
-      <div class="chips" id="chips" role="tablist" aria-label="Filter op categorie"></div>
-    </div>
-
-    <section id="lijst" class="lijst"></section>
-
-    <section class="leeg" id="leeg" hidden>
-      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="38" rx="5"/><path d="M22 18v-6h20v6"/><path d="M32 28v18M23 37h18"/></svg>
-      <h2>Je noodpakket is nog leeg</h2>
-      <p>Voeg je eerste item toe, of zet een back-up terug via de instellingen.</p>
-      <div class="leeg-acties">
-        <button class="btn primary" data-actie="nieuw">Item toevoegen</button>
-        <button class="btn" data-actie="importeer">Back-up terugzetten</button>
+    <!-- Klaar? -->
+    <section class="view" data-view="klaar" hidden>
+      <div class="band">
+        <div class="kit-switch" role="tablist" aria-label="Kies een pakket"></div>
+        <div class="niveaus" id="niveaus" role="tablist" aria-label="Kies hoe lang je het wilt volhouden"></div>
       </div>
+      <section class="kaart score-kaart" id="score"></section>
+      <section class="kaart" id="stappen"></section>
+      <section class="kaart" id="binnenkort"></section>
+      <section id="checklist"></section>
+    </section>
+
+    <!-- Stroomstoring -->
+    <section class="view" data-view="stroom" hidden>
+      <div class="band band-tekst">
+        <h2>Stroom uitgevallen?</h2>
+        <p>Korte, praktische bladen voor een stroomstoring. Alles staat in de app en werkt zonder internet.</p>
+      </div>
+      <section class="kaart timer" id="timer"></section>
+      <div class="groep"><h2>Tijdens een storing</h2><span class="lijn"></span></div>
+      <section class="bladen" id="bladen"></section>
+    </section>
+
+    <!-- Gezinsplan -->
+    <section class="view" data-view="plan" hidden>
+      <div class="band band-tekst">
+        <h2>Gezinsplan</h2>
+        <p>Schrijf het één keer op, print het en leg het bij je noodpakket. Het blijft alleen op dit apparaat.</p>
+      </div>
+      <section class="kaart print-kaart">
+        <p>Op papier heb je het ook als je telefoon leeg is. De print bevat je plan, je checklist en je voorraad met datums.</p>
+        <button class="btn primary" id="btn-print">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>
+          Plan en pakket printen
+        </button>
+      </section>
+      <form id="form-plan" class="plan" autocomplete="off">
+        <fieldset class="kaart">
+          <legend>Waar spreken we af</legend>
+          <label class="veld"><span>Dicht bij huis</span><input name="plekDichtbij" maxlength="120" placeholder="Bijv. bij de speeltuin op de hoek"></label>
+          <label class="veld"><span>Buiten de buurt</span><input name="plekVerder" maxlength="120" placeholder="Bijv. bij opa en oma, Dorpsstraat 4"></label>
+        </fieldset>
+        <fieldset class="kaart">
+          <legend>Wie doet wat</legend>
+          <label class="veld"><span>Wie haalt de kinderen op</span><textarea name="kinderen" rows="2" maxlength="400"></textarea></label>
+          <label class="veld"><span>Wie neemt de huisdieren mee</span><input name="huisdieren" maxlength="160"></label>
+          <label class="veld"><span>Buren om naar om te kijken</span><textarea name="buren" rows="2" maxlength="400" placeholder="Bijv. mevrouw De Vries, nr. 12, woont alleen"></textarea></label>
+          <label class="veld"><span>Wie pakt de vluchttas</span><input name="tas" maxlength="160"></label>
+        </fieldset>
+        <fieldset class="kaart">
+          <legend>Contact</legend>
+          <label class="veld"><span>Contactpersoon buiten de regio</span><input name="contactBuiten" maxlength="160" placeholder="Iedereen meldt zich bij deze persoon"></label>
+          <label class="veld"><span>Belangrijke nummers</span><textarea name="contacten" rows="4" maxlength="800" placeholder="Eén per regel, bijv.&#10;Huisarts – 012 345 6789&#10;Werk Sam – 06 1234 5678"></textarea></label>
+          <p class="help">Op de print staan ook altijd 112, 0900-8844 (politie, geen spoed) en 0800-9009 (storingen gas en stroom).</p>
+        </fieldset>
+        <fieldset class="kaart">
+          <legend>Gezondheid en overig</legend>
+          <label class="veld"><span>Medicijnen, allergieën, hulpmiddelen</span><textarea name="medisch" rows="2" maxlength="600"></textarea></label>
+          <label class="veld"><span>Verder</span><textarea name="overig" rows="2" maxlength="800" placeholder="Bijv. waar de hoofdkraan en de meterkast zitten"></textarea></label>
+        </fieldset>
+      </form>
     </section>
   </main>
+
+  <nav class="tabbar" aria-label="Onderdelen">
+    <button data-tab="voorraad" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M12 11v6M9 14h6"/></svg>
+      <span>Voorraad</span>
+    </button>
+    <button data-tab="klaar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>
+      <span>Klaar?</span>
+    </button>
+    <button data-tab="stroom">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7Z"/></svg>
+      <span>Storing</span>
+    </button>
+    <button data-tab="plan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></svg>
+      <span>Gezinsplan</span>
+    </button>
+  </nav>
 
   <button class="fab" id="btn-nieuw" aria-label="Item toevoegen">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -79,10 +167,16 @@
           <input name="naam" required maxlength="80" placeholder="Bijv. Kidneybonen" list="naam-suggesties" autocomplete="off">
           <datalist id="naam-suggesties"></datalist>
         </label>
-        <label class="veld">
-          <span>Categorie</span>
-          <select name="categorie"></select>
-        </label>
+        <div class="rij">
+          <label class="veld">
+            <span>Categorie</span>
+            <select name="categorie"></select>
+          </label>
+          <label class="veld">
+            <span>Waar ligt het?</span>
+            <select name="plek"></select>
+          </label>
+        </div>
         <div class="rij">
           <div class="veld">
             <span>Aantal</span>
@@ -159,8 +253,14 @@
         </section>
 
         <section class="blok">
+          <h3>Huishouden</h3>
+          <p class="muted" id="set-huis-tekst"></p>
+          <div class="knoppen"><button class="btn" id="btn-set-huis">Aanpassen</button></div>
+        </section>
+
+        <section class="blok">
           <h3>Back-up</h3>
-          <p class="muted">Je lijst staat alleen op dit apparaat. Maak af en toe een back-up, bijvoorbeeld naar iCloud Drive of Google Drive.</p>
+          <p class="muted">Je lijst, checklist en gezinsplan staan alleen op dit apparaat. Maak af en toe een back-up, bijvoorbeeld naar iCloud Drive of Google Drive.</p>
           <div class="knoppen">
             <button class="btn" id="btn-export">Back-up downloaden</button>
             <button class="btn" id="btn-import">Back-up terugzetten</button>
@@ -203,6 +303,41 @@
       </div>
     </div>
   </dialog>
+
+  <!-- Huishouden -->
+  <dialog id="dlg-huis" class="sheet small">
+    <form id="form-huis" method="dialog">
+      <header class="sheet-head">
+        <h2>Je huishouden</h2>
+        <button type="button" class="icon-btn" data-sluit aria-label="Sluiten"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="sheet-body">
+        <p class="muted">De checklist rekent hoeveel water en eten je nodig hebt op basis van wie er in huis woont.</p>
+        <div class="veld"><span>Volwassenen</span><div class="stepper"><button type="button" data-stap="-1" data-voor="volwassenen" aria-label="Minder">−</button><input name="volwassenen" type="number" min="1" max="20" inputmode="numeric"><button type="button" data-stap="1" data-voor="volwassenen" aria-label="Meer">+</button></div></div>
+        <div class="veld"><span>Kinderen</span><div class="stepper"><button type="button" data-stap="-1" data-voor="kinderen" aria-label="Minder">−</button><input name="kinderen" type="number" min="0" max="20" inputmode="numeric"><button type="button" data-stap="1" data-voor="kinderen" aria-label="Meer">+</button></div></div>
+        <div class="veld"><span>Huisdieren</span><div class="stepper"><button type="button" data-stap="-1" data-voor="huisdieren" aria-label="Minder">−</button><input name="huisdieren" type="number" min="0" max="20" inputmode="numeric"><button type="button" data-stap="1" data-voor="huisdieren" aria-label="Meer">+</button></div></div>
+      </div>
+      <footer class="sheet-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-sluit>Annuleren</button>
+        <button type="submit" class="btn primary">Opslaan</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Gidsblad -->
+  <dialog id="dlg-blad" class="sheet">
+    <div class="sheet-inner">
+      <header class="sheet-head">
+        <h2 id="blad-titel"></h2>
+        <button type="button" class="icon-btn" data-sluit aria-label="Sluiten"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="sheet-body blad" id="blad-inhoud"></div>
+    </div>
+  </dialog>
+
+  <!-- Wordt alleen geprint -->
+  <section id="print" class="print-blad" aria-hidden="true"></section>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
