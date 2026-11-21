@@ -2,7 +2,11 @@
 
 Een eenvoudige app om de houdbaarheid van je noodpakket bij te houden. Je voegt items toe met aantal en houdbaarheidsdatum, en de app laat zien wat verlopen is en wat binnen 3 weken over datum gaat.
 
-- **Privé:** je lijst staat alleen in de browser van jouw telefoon of computer. Iemand anders die de site opent, ziet een lege app.
+- **Drie pakketten:** Thuis, Vluchttas en Auto, elk met een eigen voorraad.
+- **Klaar?** Een checklist per pakket, voor thuis op drie niveaus (72 uur, 1 week, 2 weken), afgestemd op je huishouden (volwassenen, kinderen, huisdieren). De app herkent wat al in je voorraad staat, rekent water uit in liters (vul bij water de inhoud in, bijv. `1,5L`) en geeft een score waarin essentiële spullen dubbel tellen, plus de volgende stappen en wat binnenkort verloopt.
+- **Stroomstoring:** een offline gids (eerste uur, koelkast en vriezer, drinkwater, koolmonoxide, veilig licht, warm blijven) en een koelkasttimer die aftelt vanaf het moment dat de stroom uitviel.
+- **Gezinsplan:** afspreekplekken, wie wat doet, buren en nummers. Te printen samen met je checklist en voorraad.
+ je lijst staat alleen in de browser van jouw telefoon of computer. Iemand anders die de site opent, ziet een lege app.
 - **Werkt offline** en kan als app op je beginscherm.
 - **Optioneel e-mail:** GitHub mailt je als er iets bijna verloopt, zonder namen van items te tonen.
 
@@ -52,6 +56,8 @@ Testen kan via **Actions → Noodpakket-herinnering → Run workflow**.
 | `index.html`, `css/`, `js/` | De app |
 | `js/kluis.js` | Versleuteling (AES-GCM, gedeeld door app en controle) |
 | `js/datum.js` | Wanneer iets "verlopen" of "binnenkort" is |
+| `js/klaar.js` | Checklists per pakket en de score |
+| `js/gids.js` | Teksten van de stroomstoringsgids |
 | `scripts/controleer.mjs` | De wekelijkse controle |
 | `.github/workflows/herinnering.yml` | Wanneer de controle draait |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline werken en op het beginscherm zetten |

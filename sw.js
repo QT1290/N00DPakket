@@ -1,6 +1,6 @@
 // Netwerk eerst, cache als terugval: altijd de nieuwste versie, maar werkt ook offline.
-const CACHE = "noodpakket-v1";
-const BESTANDEN = ["./", "index.html", "css/style.css", "js/app.js", "js/datum.js", "js/kluis.js", "manifest.webmanifest", "icons/icon.svg"];
+const CACHE = "noodpakket-v2";
+const BESTANDEN = ["./", "index.html", "css/style.css", "js/app.js", "js/datum.js", "js/kluis.js", "js/klaar.js", "js/gids.js", "manifest.webmanifest", "icons/icon.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BESTANDEN)).then(() => self.skipWaiting()));
